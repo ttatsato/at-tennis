@@ -2,10 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import {
-  CATEGORY_LABEL,
   LEVEL_LABEL,
   STYLE_LABEL,
-  type Gear,
+  type GearWithRelations,
   type ReviewWithAuthor,
 } from "@/lib/types";
 import { deleteReview, postReview } from "./actions";
@@ -24,9 +23,11 @@ export default async function GearDetailPage({
 
   const { data: gear } = await supabase
     .from("gears")
-    .select("*")
+    .select(
+      "id, category_code, brand_id, name, description, image_url, gauge_mm, created_at, categories(code, label), brands(id, name)",
+    )
     .eq("id", id)
-    .maybeSingle<Gear>();
+    .maybeSingle<GearWithRelations>();
 
   if (!gear) notFound();
 
@@ -59,10 +60,19 @@ export default async function GearDetailPage({
 
       <section className="bg-white border border-zinc-200 rounded-lg p-6">
         <div className="text-xs text-emerald-700 font-medium">
-          {CATEGORY_LABEL[gear.category]}
+          {gear.categories?.label ?? gear.category_code}
         </div>
-        <h1 className="text-2xl font-bold mt-1">{gear.brand}</h1>
-        <div className="text-lg text-zinc-800">{gear.name}</div>
+        <h1 className="text-2xl font-bold mt-1">
+          {gear.brands?.name ?? "-"}
+        </h1>
+        <div className="text-lg text-zinc-800">
+          {gear.name}
+          {gear.gauge_mm != null && (
+            <span className="ml-2 text-sm text-zinc-500">
+              ゲージ {gear.gauge_mm.toFixed(2)}mm
+            </span>
+          )}
+        </div>
         {gear.description && (
           <p className="mt-3 text-sm text-zinc-700 whitespace-pre-wrap">
             {gear.description}

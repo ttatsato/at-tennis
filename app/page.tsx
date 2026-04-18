@@ -1,18 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import {
-  CATEGORY_LABEL,
-  type Gear,
-  type GearCategory,
-} from "@/lib/types";
-
-const CATEGORIES: GearCategory[] = [
-  "racquet",
-  "string",
-  "shoes",
-  "apparel",
-  "setting",
-];
+import type { Category, GearWithRelations } from "@/lib/types";
 
 type GearStats = { gear_id: string; review_count: number; avg_rating: number };
 
@@ -22,18 +10,27 @@ export default async function Home({
   searchParams: Promise<{ category?: string }>;
 }) {
   const { category } = await searchParams;
-  const active = CATEGORIES.includes(category as GearCategory)
-    ? (category as GearCategory)
-    : null;
-
   const supabase = await createClient();
+
+  const { data: categories } = await supabase
+    .from("categories")
+    .select("*")
+    .order("sort_order")
+    .returns<Category[]>();
+
+  const categoryCodes = new Set((categories ?? []).map((c) => c.code));
+  const active =
+    category && categoryCodes.has(category) ? category : null;
+
   let query = supabase
     .from("gears")
-    .select("*")
+    .select(
+      "id, category_code, brand_id, name, description, image_url, gauge_mm, created_at, categories(code, label), brands(id, name)",
+    )
     .order("created_at", { ascending: false });
-  if (active) query = query.eq("category", active);
+  if (active) query = query.eq("category_code", active);
 
-  const { data: gears } = await query.returns<Gear[]>();
+  const { data: gears } = await query.returns<GearWithRelations[]>();
 
   const ids = (gears ?? []).map((g) => g.id);
   const { data: stats } = ids.length
@@ -54,12 +51,12 @@ export default async function Home({
 
       <div className="flex gap-2 flex-wrap mb-6">
         <CategoryChip href="/" label="すべて" active={active === null} />
-        {CATEGORIES.map((c) => (
+        {(categories ?? []).map((c) => (
           <CategoryChip
-            key={c}
-            href={`/?category=${c}`}
-            label={CATEGORY_LABEL[c]}
-            active={active === c}
+            key={c.code}
+            href={`/?category=${c.code}`}
+            label={c.label}
+            active={active === c.code}
           />
         ))}
       </div>
@@ -75,10 +72,19 @@ export default async function Home({
                   className="block bg-white border border-zinc-200 rounded-lg p-4 hover:border-emerald-500 transition"
                 >
                   <div className="text-xs text-emerald-700 font-medium mb-1">
-                    {CATEGORY_LABEL[g.category]}
+                    {g.categories?.label ?? g.category_code}
                   </div>
-                  <div className="font-semibold">{g.brand}</div>
-                  <div className="text-sm text-zinc-800">{g.name}</div>
+                  <div className="font-semibold">
+                    {g.brands?.name ?? "-"}
+                  </div>
+                  <div className="text-sm text-zinc-800">
+                    {g.name}
+                    {g.gauge_mm != null && (
+                      <span className="ml-2 text-xs text-zinc-500">
+                        {g.gauge_mm.toFixed(2)}mm
+                      </span>
+                    )}
+                  </div>
                   <div className="mt-2 flex items-center gap-2 text-sm">
                     <span className="text-amber-500">
                       ★ {s?.avg_rating?.toFixed(1) ?? "-"}

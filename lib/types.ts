@@ -1,10 +1,3 @@
-export type GearCategory =
-  | "racquet"
-  | "string"
-  | "shoes"
-  | "apparel"
-  | "setting";
-
 export type TennisLevel =
   | "beginner"
   | "intermediate"
@@ -18,14 +11,6 @@ export type PlayStyle =
   | "counter_puncher"
   | "serve_and_volley"
   | "net_rusher";
-
-export const CATEGORY_LABEL: Record<GearCategory, string> = {
-  racquet: "ラケット",
-  string: "ストリング",
-  shoes: "シューズ",
-  apparel: "ウェア",
-  setting: "セッティング",
-};
 
 export const LEVEL_LABEL: Record<TennisLevel, string> = {
   beginner: "初級",
@@ -43,14 +28,31 @@ export const STYLE_LABEL: Record<PlayStyle, string> = {
   net_rusher: "ネットラッシャー",
 };
 
+export type Category = {
+  code: string;
+  label: string;
+  sort_order: number;
+};
+
+export type Brand = {
+  id: string;
+  name: string;
+};
+
 export type Gear = {
   id: string;
-  category: GearCategory;
-  brand: string;
+  category_code: string;
+  brand_id: string;
   name: string;
   description: string | null;
   image_url: string | null;
+  gauge_mm: number | null;
   created_at: string;
+};
+
+export type GearWithRelations = Gear & {
+  categories: Pick<Category, "code" | "label"> | null;
+  brands: Pick<Brand, "id" | "name"> | null;
 };
 
 export type Profile = {

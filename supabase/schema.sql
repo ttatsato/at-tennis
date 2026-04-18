@@ -2,24 +2,55 @@
 -- Supabase SQL Editor で実行してください
 
 -- =========================================
--- プロフィール（auth.users を拡張）
+-- プロフィール用 enum
 -- =========================================
 create type tennis_level as enum (
-  'beginner',      -- 初級
-  'intermediate',  -- 中級
-  'advanced',      -- 上級
-  'tournament',    -- 大会出場
-  'pro'            -- プロ
+  'beginner',
+  'intermediate',
+  'advanced',
+  'tournament',
+  'pro'
 );
 
 create type play_style as enum (
-  'all_round',     -- オールラウンダー
-  'aggressive_baseliner', -- ベースライナー（攻撃型）
-  'counter_puncher',      -- カウンターパンチャー
-  'serve_and_volley',     -- サーブ&ボレー
-  'net_rusher'            -- ネットラッシャー
+  'all_round',
+  'aggressive_baseliner',
+  'counter_puncher',
+  'serve_and_volley',
+  'net_rusher'
 );
 
+-- =========================================
+-- カテゴリ (リレーション)
+-- =========================================
+create table categories (
+  code text primary key,                 -- 'racquet' など
+  label text not null,                   -- 'ラケット' など
+  sort_order int not null default 0
+);
+
+alter table categories enable row level security;
+
+create policy "categories are viewable by everyone"
+  on categories for select using (true);
+
+-- =========================================
+-- ブランド (リレーション)
+-- =========================================
+create table brands (
+  id uuid primary key default gen_random_uuid(),
+  name text not null unique,
+  created_at timestamptz not null default now()
+);
+
+alter table brands enable row level security;
+
+create policy "brands are viewable by everyone"
+  on brands for select using (true);
+
+-- =========================================
+-- プロフィール
+-- =========================================
 create table profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   display_name text not null,
@@ -42,26 +73,24 @@ create policy "users can update own profile"
 
 -- =========================================
 -- ギア
+--   brand / category はリレーション参照
+--   gauge_mm は string カテゴリで使用 (例: 1.25, 1.30)
 -- =========================================
-create type gear_category as enum (
-  'racquet',   -- ラケット
-  'string',    -- ストリング
-  'shoes',     -- シューズ
-  'apparel',   -- ウェア
-  'setting'    -- ラケット+ストリングのセッティング
-);
-
 create table gears (
   id uuid primary key default gen_random_uuid(),
-  category gear_category not null,
-  brand text not null,
+  category_code text not null references categories(code),
+  brand_id uuid not null references brands(id),
   name text not null,
   description text,
   image_url text,
-  created_at timestamptz not null default now()
+  gauge_mm numeric(3,2),                -- ストリングのゲージ (mm)。他カテゴリでは null
+  created_at timestamptz not null default now(),
+  constraint gauge_only_for_string
+    check (gauge_mm is null or category_code = 'string')
 );
 
-create index gears_category_idx on gears(category);
+create index gears_category_idx on gears(category_code);
+create index gears_brand_idx on gears(brand_id);
 
 alter table gears enable row level security;
 
@@ -100,7 +129,7 @@ create policy "users can delete own review"
   on reviews for delete using (auth.uid() = user_id);
 
 -- =========================================
--- 集計用ビュー
+-- 集計ビュー
 -- =========================================
 create view gear_stats as
   select
