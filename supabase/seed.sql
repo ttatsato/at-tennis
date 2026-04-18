@@ -1,90 +1,71 @@
--- マスターデータ + 初期ギアデータ
-
--- カテゴリ
-insert into categories (code, label, sort_order) values
-  ('racquet', 'ラケット', 1),
-  ('string',  'ストリング', 2),
-  ('shoes',   'シューズ',   3),
-  ('apparel', 'ウェア',     4),
-  ('setting', 'セッティング', 5);
+-- 初期データ: ブランド + ラケット + ストリング
 
 -- ブランド
-insert into brands (name) values
-  ('Wilson'),
-  ('Babolat'),
-  ('Yonex'),
-  ('HEAD'),
-  ('Luxilon'),
-  ('Nike'),
-  ('Asics'),
-  ('Uniqlo');
+insert into brands (name_ja, name_en) values
+  ('ウィルソン',   'Wilson'),
+  ('バボラ',       'Babolat'),
+  ('ヨネックス',   'Yonex'),
+  ('ヘッド',       'HEAD'),
+  ('ルキシロン',   'Luxilon'),
+  ('ゴーセン',     'Gosen'),
+  ('テクニファイバー', 'Tecnifibre');
 
--- ギア
-insert into gears (category_code, brand_id, name, description, gauge_mm)
-select 'racquet', b.id, 'Pro Staff 97 v14',
-       'フェデラー使用モデル系譜。コントロール重視のフラット系プレーヤー向け。', null
-from brands b where b.name = 'Wilson';
+-- ラケット
+insert into racquets (brand_id, name_ja, name_en, head_size_sqin, weight_g, balance_mm, stiffness_ra,
+                      description_ja, description_en)
+select b.id, 'プロスタッフ 97 v14', 'Pro Staff 97 v14', 97.0, 315.0, 310.0, 65.0,
+       'フェデラー使用モデル系譜。コントロール重視のフラット系プレーヤー向け。',
+       'Federer-lineage frame favored by flat-hitting control players.'
+from brands b where b.name_en = 'Wilson';
 
-insert into gears (category_code, brand_id, name, description, gauge_mm)
-select 'racquet', b.id, 'Pure Aero 2023',
-       'ナダル使用モデル。強烈なスピンを打ちたいプレーヤーに人気。', null
-from brands b where b.name = 'Babolat';
+insert into racquets (brand_id, name_ja, name_en, head_size_sqin, weight_g, balance_mm, stiffness_ra,
+                      description_ja, description_en)
+select b.id, 'ピュアアエロ 2023', 'Pure Aero 2023', 100.0, 300.0, 320.0, 71.0,
+       'ナダル使用モデル。強烈なスピンを打ちたいプレーヤーに人気。',
+       'Nadal''s signature racquet, known for heavy topspin potential.'
+from brands b where b.name_en = 'Babolat';
 
-insert into gears (category_code, brand_id, name, description, gauge_mm)
-select 'racquet', b.id, 'EZONE 98',
-       'ISOMETRIC フレームで広いスイートスポット。オールラウンド向け。', null
-from brands b where b.name = 'Yonex';
+insert into racquets (brand_id, name_ja, name_en, head_size_sqin, weight_g, balance_mm, stiffness_ra,
+                      description_ja, description_en)
+select b.id, 'イーゾーン 98', 'EZONE 98', 98.0, 305.0, 315.0, 66.0,
+       'ISOMETRIC フレームで広いスイートスポット。オールラウンド向け。',
+       'ISOMETRIC frame with a broad sweet spot, good for all-court play.'
+from brands b where b.name_en = 'Yonex';
 
-insert into gears (category_code, brand_id, name, description, gauge_mm)
-select 'racquet', b.id, 'Speed MP 2024',
-       'ジョコビッチ使用モデル。コントロールとパワーのバランス。', null
-from brands b where b.name = 'HEAD';
+insert into racquets (brand_id, name_ja, name_en, head_size_sqin, weight_g, balance_mm, stiffness_ra,
+                      description_ja, description_en)
+select b.id, 'スピード MP 2024', 'Speed MP 2024', 100.0, 300.0, 320.0, 66.0,
+       'ジョコビッチ使用モデル。コントロールとパワーのバランス。',
+       'Djokovic''s racquet — balanced control and power.'
+from brands b where b.name_en = 'HEAD';
 
--- ストリング (ゲージあり)
-insert into gears (category_code, brand_id, name, description, gauge_mm)
-select 'string', b.id, 'ALU Power',
-       'ツアーで最も使われるポリエステル。シャープな打球感。', 1.25
-from brands b where b.name = 'Luxilon';
+-- ストリング
+insert into strings (brand_id, name_ja, name_en, gauge_mm, material, description_ja, description_en)
+select b.id, 'アルパワー', 'ALU Power', 1.25, 'poly',
+       'ツアーで最も使われるポリエステル。シャープな打球感。',
+       'The most-used poly on tour, known for crisp feel.'
+from brands b where b.name_en = 'Luxilon';
 
-insert into gears (category_code, brand_id, name, description, gauge_mm)
-select 'string', b.id, 'RPM Blast',
-       'スピン量に定評のあるポリエステル。', 1.25
-from brands b where b.name = 'Babolat';
+insert into strings (brand_id, name_ja, name_en, gauge_mm, material, description_ja, description_en)
+select b.id, 'アルパワー', 'ALU Power', 1.20, 'poly',
+       '細ゲージで打球感重視。テンション維持はやや短め。',
+       'Thinner gauge for enhanced feel; shorter tension life.'
+from brands b where b.name_en = 'Luxilon';
 
-insert into gears (category_code, brand_id, name, description, gauge_mm)
-select 'string', b.id, 'Poly Tour Pro',
-       '柔らかめのポリで腕に優しい。', 1.25
-from brands b where b.name = 'Yonex';
+insert into strings (brand_id, name_ja, name_en, gauge_mm, material, description_ja, description_en)
+select b.id, 'RPM ブラスト', 'RPM Blast', 1.25, 'poly',
+       'スピン量に定評のあるポリエステル。',
+       'Poly string renowned for spin production.'
+from brands b where b.name_en = 'Babolat';
 
-insert into gears (category_code, brand_id, name, description, gauge_mm)
-select 'string', b.id, 'Poly Tour Pro',
-       '細めゲージで打球感を重視。', 1.20
-from brands b where b.name = 'Yonex';
+insert into strings (brand_id, name_ja, name_en, gauge_mm, material, description_ja, description_en)
+select b.id, 'ポリツアープロ', 'Poly Tour Pro', 1.25, 'poly',
+       '柔らかめのポリで腕に優しい。',
+       'Softer poly that''s easier on the arm.'
+from brands b where b.name_en = 'Yonex';
 
--- シューズ
-insert into gears (category_code, brand_id, name, description, gauge_mm)
-select 'shoes', b.id, 'Air Zoom Vapor Pro 2',
-       '軽量で俊敏な動きを重視したモデル。', null
-from brands b where b.name = 'Nike';
-
-insert into gears (category_code, brand_id, name, description, gauge_mm)
-select 'shoes', b.id, 'Gel-Resolution 9',
-       '安定感とクッション性の定番。', null
-from brands b where b.name = 'Asics';
-
--- ウェア
-insert into gears (category_code, brand_id, name, description, gauge_mm)
-select 'apparel', b.id, 'DRY-EX ポロシャツ',
-       '錦織圭モデル系。速乾性◎コスパ良好。', null
-from brands b where b.name = 'Uniqlo';
-
--- セッティング
-insert into gears (category_code, brand_id, name, description, gauge_mm)
-select 'setting', b.id, 'Pro Staff 97 v14 × Luxilon ALU Power 1.25 / 50lbs',
-       '定番のコントロール系セッティング。', null
-from brands b where b.name = 'Wilson';
-
-insert into gears (category_code, brand_id, name, description, gauge_mm)
-select 'setting', b.id, 'Pure Aero × RPM Blast 1.25 / 52lbs',
-       'スピン特化のナダル系セッティング。', null
-from brands b where b.name = 'Babolat';
+insert into strings (brand_id, name_ja, name_en, gauge_mm, material, description_ja, description_en)
+select b.id, 'エックスワン バイフェイズ', 'X-One Biphase', 1.30, 'multi',
+       '定番のマルチフィラメント。上質な打球感。',
+       'Classic multifilament with premium feel.'
+from brands b where b.name_en = 'Tecnifibre';

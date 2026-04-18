@@ -1,100 +1,51 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
 import {
   LEVEL_LABEL,
   STYLE_LABEL,
-  type GearWithRelations,
   type ReviewWithAuthor,
 } from "@/lib/types";
-import { deleteReview, postReview } from "./actions";
 
-export default async function GearDetailPage({
-  params,
-  searchParams,
-}: {
-  params: Promise<{ id: string }>;
-  searchParams: Promise<{ posted?: string; error?: string }>;
-}) {
-  const { id } = await params;
-  const { posted, error } = await searchParams;
+type Props = {
+  gearId: string;
+  reviews: ReviewWithAuthor[];
+  currentUserId: string | null;
+  postAction: (formData: FormData) => Promise<void>;
+  deleteAction: (formData: FormData) => Promise<void>;
+  posted?: boolean;
+  error?: string;
+};
 
-  const supabase = await createClient();
-
-  const { data: gear } = await supabase
-    .from("gears")
-    .select(
-      "id, category_code, brand_id, name, description, image_url, gauge_mm, created_at, categories(code, label), brands(id, name)",
-    )
-    .eq("id", id)
-    .maybeSingle<GearWithRelations>();
-
-  if (!gear) notFound();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const { data: reviews } = await supabase
-    .from("reviews")
-    .select(
-      "id, gear_id, user_id, rating, title, body, created_at, profiles(display_name, level, style)",
-    )
-    .eq("gear_id", id)
-    .order("created_at", { ascending: false })
-    .returns<ReviewWithAuthor[]>();
-
-  const myReview = reviews?.find((r) => r.user_id === user?.id) ?? null;
-
-  const reviewCount = reviews?.length ?? 0;
-  const avg =
-    reviewCount > 0
-      ? (reviews!.reduce((sum, r) => sum + r.rating, 0) / reviewCount).toFixed(1)
-      : "-";
+export function ReviewSection({
+  gearId,
+  reviews,
+  currentUserId,
+  postAction,
+  deleteAction,
+  posted,
+  error,
+}: Props) {
+  const myReview =
+    currentUserId != null
+      ? reviews.find((r) => r.user_id === currentUserId) ?? null
+      : null;
 
   return (
-    <div className="flex flex-col gap-6">
-      <Link href="/" className="text-sm text-emerald-700 hover:underline">
-        ← 一覧に戻る
-      </Link>
-
-      <section className="bg-white border border-zinc-200 rounded-lg p-6">
-        <div className="text-xs text-emerald-700 font-medium">
-          {gear.categories?.label ?? gear.category_code}
-        </div>
-        <h1 className="text-2xl font-bold mt-1">
-          {gear.brands?.name ?? "-"}
-        </h1>
-        <div className="text-lg text-zinc-800">
-          {gear.name}
-          {gear.gauge_mm != null && (
-            <span className="ml-2 text-sm text-zinc-500">
-              ゲージ {gear.gauge_mm.toFixed(2)}mm
-            </span>
-          )}
-        </div>
-        {gear.description && (
-          <p className="mt-3 text-sm text-zinc-700 whitespace-pre-wrap">
-            {gear.description}
-          </p>
-        )}
-        <div className="mt-4 flex items-center gap-3 text-sm">
-          <span className="text-amber-500 text-lg">★ {avg}</span>
-          <span className="text-zinc-500">({reviewCount}件の口コミ)</span>
-        </div>
-      </section>
-
+    <>
       <section>
         <h2 className="font-bold text-lg mb-3">口コミを投稿</h2>
-        {user ? (
+        {currentUserId ? (
           <>
-            {posted === "1" && (
+            {posted && (
               <p className="mb-3 text-sm text-emerald-700">投稿しました。</p>
             )}
             {error && (
               <p className="mb-3 text-sm text-red-600">エラー: {error}</p>
             )}
-            <ReviewForm gearId={gear.id} existing={myReview} />
+            <ReviewForm
+              gearId={gearId}
+              existing={myReview}
+              postAction={postAction}
+            />
           </>
         ) : (
           <div className="bg-white border border-zinc-200 rounded-lg p-4 text-sm">
@@ -109,7 +60,7 @@ export default async function GearDetailPage({
 
       <section>
         <h2 className="font-bold text-lg mb-3">口コミ一覧</h2>
-        {reviews && reviews.length > 0 ? (
+        {reviews.length > 0 ? (
           <ul className="flex flex-col gap-3">
             {reviews.map((r) => (
               <li
@@ -146,10 +97,9 @@ export default async function GearDetailPage({
                     </span>
                   )}
                 </div>
-                {user?.id === r.user_id && (
-                  <form action={deleteReview} className="mt-3">
+                {currentUserId === r.user_id && (
+                  <form action={deleteAction} className="mt-3">
                     <input type="hidden" name="review_id" value={r.id} />
-                    <input type="hidden" name="gear_id" value={gear.id} />
                     <button
                       type="submit"
                       className="text-xs text-red-600 hover:underline"
@@ -167,20 +117,22 @@ export default async function GearDetailPage({
           </p>
         )}
       </section>
-    </div>
+    </>
   );
 }
 
 function ReviewForm({
   gearId,
   existing,
+  postAction,
 }: {
   gearId: string;
   existing: ReviewWithAuthor | null;
+  postAction: (formData: FormData) => Promise<void>;
 }) {
   return (
     <form
-      action={postReview}
+      action={postAction}
       className="bg-white border border-zinc-200 rounded-lg p-4 flex flex-col gap-3"
     >
       <input type="hidden" name="gear_id" value={gearId} />

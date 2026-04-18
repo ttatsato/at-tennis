@@ -1,6 +1,6 @@
 # AT Tennis
 
-テニスギア（ラケット・ストリング・シューズ・ウェア・セッティング）の口コミ投稿サイト。@cosme のテニス版。
+テニスギアの口コミ投稿サイト。@cosme のテニス版。MVP ではラケットとストリングに対応。
 
 ## 技術スタック
 
@@ -12,9 +12,23 @@
 
 - 新規登録・ログイン (Supabase Auth, email + password)
 - プロフィール編集（テニスレベル / プレースタイル）
-- ギア一覧 / カテゴリ絞り込み
-- **ギア詳細ページで口コミ投稿・編集・削除**（1ユーザー1ギア1件）
+- ラケット / ストリングの一覧・詳細ページ
+- **詳細ページで口コミ投稿・編集・削除**（1ユーザー1商品1件）
 - 投稿者のレベル・プレースタイルが口コミに表示される
+- 商品名・ブランド名は日本語/英語の両方を保持
+
+## データ設計
+
+カテゴリごとにテーブルを分割（class-table 分割）:
+
+- `brands (id, name_ja, name_en)`
+- `racquets (id, brand_id, name_ja, name_en, head_size_sqin, weight_g, balance_mm, stiffness_ra, …)`
+- `strings  (id, brand_id, name_ja, name_en, gauge_mm, material, …)`
+- `racquet_reviews (id, racquet_id FK, user_id FK, rating, title, body)`
+- `string_reviews  (id, string_id FK,  user_id FK, rating, title, body)`
+- `profiles (id, display_name, level, style, bio)`
+
+集計は `racquet_stats` / `string_stats` ビュー。口コミは RLS で本人のみ編集可。
 
 ## セットアップ
 
@@ -45,18 +59,21 @@ http://localhost:3000 にアクセス。
 
 ```
 app/
-  page.tsx                # ギア一覧（カテゴリ絞り込み）
-  gears/[id]/
-    page.tsx              # ギア詳細 + 口コミ一覧 + 投稿フォーム
-    actions.ts            # 口コミ投稿・削除の Server Action
-  login/ signup/          # 認証ページ
-  profile/                # レベル/プレースタイル編集
-  auth/actions.ts         # サインアップ・ログイン・ログアウト
+  page.tsx                      # ランディング
+  racquets/page.tsx             # ラケット一覧
+  racquets/[id]/page.tsx        # ラケット詳細 + 口コミ
+  racquets/[id]/actions.ts      # ラケット口コミの Server Action
+  strings/page.tsx              # ストリング一覧
+  strings/[id]/page.tsx         # ストリング詳細 + 口コミ
+  strings/[id]/actions.ts       # ストリング口コミの Server Action
+  _components/ReviewSection.tsx # 共通の口コミ表示・投稿フォーム
+  login/ signup/ profile/       # 認証・プロフィール
+  auth/actions.ts               # サインアップ・ログイン・ログアウト
 lib/
-  supabase/               # client / server / proxy 用の Supabase クライアント
-  types.ts                # 型とラベルマップ
-proxy.ts                  # Supabase セッション更新 (Next.js 16 の proxy)
+  supabase/                     # client / server / proxy 用の Supabase クライアント
+  types.ts                      # 型・ラベル・表示ヘルパ
+proxy.ts                        # Supabase セッション更新 (Next.js 16 の proxy)
 supabase/
-  schema.sql              # DDL + RLS ポリシー
-  seed.sql                # 初期データ
+  schema.sql                    # DDL + RLS ポリシー + 集計ビュー
+  seed.sql                      # 初期データ
 ```

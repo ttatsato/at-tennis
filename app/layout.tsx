@@ -26,8 +26,11 @@ export default async function RootLayout({
               <span className="text-emerald-600">AT</span> Tennis
             </Link>
             <nav className="flex items-center gap-4 text-sm">
-              <Link href="/" className="hover:text-emerald-600">
-                ギア一覧
+              <Link href="/racquets" className="hover:text-emerald-600">
+                ラケット
+              </Link>
+              <Link href="/strings" className="hover:text-emerald-600">
+                ストリング
               </Link>
               {user ? (
                 <>

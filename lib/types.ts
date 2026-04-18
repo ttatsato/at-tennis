@@ -12,6 +12,8 @@ export type PlayStyle =
   | "serve_and_volley"
   | "net_rusher";
 
+export type StringMaterial = "poly" | "multi" | "nylon" | "gut" | "hybrid";
+
 export const LEVEL_LABEL: Record<TennisLevel, string> = {
   beginner: "初級",
   intermediate: "中級",
@@ -28,31 +30,49 @@ export const STYLE_LABEL: Record<PlayStyle, string> = {
   net_rusher: "ネットラッシャー",
 };
 
-export type Category = {
-  code: string;
-  label: string;
-  sort_order: number;
+export const STRING_MATERIAL_LABEL: Record<StringMaterial, string> = {
+  poly: "ポリエステル",
+  multi: "マルチフィラメント",
+  nylon: "ナイロン",
+  gut: "ナチュラルガット",
+  hybrid: "ハイブリッド",
 };
 
 export type Brand = {
   id: string;
-  name: string;
+  name_ja: string | null;
+  name_en: string | null;
 };
 
-export type Gear = {
+type NamedGear = {
   id: string;
-  category_code: string;
   brand_id: string;
-  name: string;
-  description: string | null;
+  name_ja: string | null;
+  name_en: string | null;
+  description_ja: string | null;
+  description_en: string | null;
   image_url: string | null;
-  gauge_mm: number | null;
   created_at: string;
 };
 
-export type GearWithRelations = Gear & {
-  categories: Pick<Category, "code" | "label"> | null;
-  brands: Pick<Brand, "id" | "name"> | null;
+export type Racquet = NamedGear & {
+  head_size_sqin: number | null;
+  weight_g: number | null;
+  balance_mm: number | null;
+  stiffness_ra: number | null;
+};
+
+export type StringGear = NamedGear & {
+  gauge_mm: number | null;
+  material: StringMaterial | null;
+};
+
+export type RacquetWithBrand = Racquet & {
+  brands: Brand | null;
+};
+
+export type StringWithBrand = StringGear & {
+  brands: Brand | null;
 };
 
 export type Profile = {
@@ -65,7 +85,6 @@ export type Profile = {
 
 export type Review = {
   id: string;
-  gear_id: string;
   user_id: string;
   rating: number;
   title: string;
@@ -76,3 +95,21 @@ export type Review = {
 export type ReviewWithAuthor = Review & {
   profiles: Pick<Profile, "display_name" | "level" | "style"> | null;
 };
+
+// 表示ヘルパ: 日本語優先、なければ英語
+export function displayName(
+  obj: { name_ja: string | null; name_en: string | null } | null | undefined,
+): string {
+  if (!obj) return "-";
+  return obj.name_ja ?? obj.name_en ?? "-";
+}
+
+export function displaySub(
+  obj: { name_ja: string | null; name_en: string | null } | null | undefined,
+): string | null {
+  if (!obj) return null;
+  if (obj.name_ja && obj.name_en && obj.name_ja !== obj.name_en) {
+    return obj.name_en;
+  }
+  return null;
+}
